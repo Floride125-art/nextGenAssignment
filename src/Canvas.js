@@ -7,6 +7,9 @@ const Canvas = () => {
     { id: 2, x: 300, y: 200, width: 100, height: 100, color: 'blue' },
   ]);
   const [activeObjectId, setActiveObjectId] = useState(null);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [resizeHandle, setResizeHandle] = useState(null);
 
   const handleDragStart = (e, id) => {
     e.dataTransfer.setData('text/plain', id);
@@ -36,9 +39,19 @@ const Canvas = () => {
     e.preventDefault();
   };
 
-  const handleMouseDown = (e, id) => {
+  const handleMouseDown = (e, id, handle) => {
     e.preventDefault();
-    setActiveObjectId(id);
+    const object = objects.find((obj) => obj.id === id);
+    if (object) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const offsetX = mouseX - object.x;
+      const offsetY = mouseY - object.y;
+      setOffsetX(offsetX);
+      setOffsetY(offsetY);
+      setActiveObjectId(id);
+      setResizeHandle(handle);
+    }
   };
 
   const handleMouseMove = (e) => {
@@ -50,9 +63,33 @@ const Canvas = () => {
       setObjects((prevObjects) => {
         return prevObjects.map((obj) => {
           if (obj.id === activeObjectId) {
-            const newWidth = mouseX - obj.x;
-            const newHeight = mouseY - obj.y;
-            return { ...obj, width: newWidth, height: newHeight };
+            let newWidth = obj.width;
+            let newHeight = obj.height;
+            let newX = obj.x;
+            let newY = obj.y;
+
+            if (resizeHandle === 'move') {
+              newX = mouseX - offsetX;
+              newY = mouseY - offsetY;
+            } else if (resizeHandle === 'topLeft') {
+              newWidth = obj.width + obj.x - mouseX;
+              newHeight = obj.height + obj.y - mouseY;
+              newX = mouseX;
+              newY = mouseY;
+            } else if (resizeHandle === 'topRight') {
+              newWidth = mouseX - obj.x;
+              newHeight = obj.height + obj.y - mouseY;
+              newY = mouseY;
+            } else if (resizeHandle === 'bottomLeft') {
+              newWidth = obj.width + obj.x - mouseX;
+              newHeight = mouseY - obj.y;
+              newX = mouseX;
+            } else if (resizeHandle === 'bottomRight') {
+              newWidth = mouseX - obj.x;
+              newHeight = mouseY - obj.y;
+            }
+
+            return { ...obj, x: newX, y: newY, width: newWidth, height: newHeight };
           }
           return obj;
         });
@@ -62,6 +99,9 @@ const Canvas = () => {
 
   const handleMouseUp = () => {
     setActiveObjectId(null);
+    setOffsetX(0);
+    setOffsetY(0);
+    setResizeHandle(null);
   };
 
   const renderObjects = () => {
@@ -70,7 +110,7 @@ const Canvas = () => {
         key={obj.id}
         draggable
         onDragStart={(e) => handleDragStart(e, obj.id)}
-        onMouseDown={(e) => handleMouseDown(e, obj.id)}
+        onMouseDown={(e) => handleMouseDown(e, obj.id, 'move')}
         style={{
           position: 'absolute',
           left: obj.x,
@@ -80,7 +120,24 @@ const Canvas = () => {
           background: obj.color,
           cursor: 'move',
         }}
-      />
+      >
+        <div
+          className="resize-handle topLeft"
+          onMouseDown={(e) => handleMouseDown(e, obj.id, 'topLeft')}
+        />
+        <div
+          className="resize-handle topRight"
+          onMouseDown={(e) => handleMouseDown(e, obj.id, 'topRight')}
+        />
+        <div
+          className="resize-handle bottomLeft"
+          onMouseDown={(e) => handleMouseDown(e, obj.id, 'bottomLeft')}
+        />
+        <div
+          className="resize-handle bottomRight"
+          onMouseDown={(e) => handleMouseDown(e, obj.id, 'bottomRight')}
+        />
+      </div>
     ));
   };
 
