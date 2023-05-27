@@ -6,6 +6,7 @@ const Canvas = () => {
     { id: 1, x: 100, y: 100, width: 100, height: 100, color: 'red' },
     { id: 2, x: 300, y: 200, width: 100, height: 100, color: 'blue' },
   ]);
+  const [activeObjectId, setActiveObjectId] = useState(null);
 
   const handleDragStart = (e, id) => {
     e.dataTransfer.setData('text/plain', id);
@@ -37,33 +38,30 @@ const Canvas = () => {
 
   const handleMouseDown = (e, id) => {
     e.preventDefault();
-    let startX = e.clientX;
-    let startY = e.clientY;
-    const object = objects.find((obj) => obj.id === parseInt(id));
-    if (object) {
-      const handleMouseMove = (e) => {
-        const newX = object.x + (e.clientX - startX);
-        const newY = object.y + (e.clientY - startY);
-        setObjects((prevObjects) => {
-          return prevObjects.map((obj) => {
-            if (obj.id === parseInt(id)) {
-              return { ...obj, x: newX, y: newY };
-            }
-            return obj;
-          });
+    setActiveObjectId(id);
+  };
+
+  const handleMouseMove = (e) => {
+    if (activeObjectId !== null) {
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      setObjects((prevObjects) => {
+        return prevObjects.map((obj) => {
+          if (obj.id === activeObjectId) {
+            const newWidth = mouseX - obj.x;
+            const newHeight = mouseY - obj.y;
+            return { ...obj, width: newWidth, height: newHeight };
+          }
+          return obj;
         });
-        startX = e.clientX;
-        startY = e.clientY;
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      });
     }
+  };
+
+  const handleMouseUp = () => {
+    setActiveObjectId(null);
   };
 
   const renderObjects = () => {
@@ -92,6 +90,8 @@ const Canvas = () => {
       style={{ position: 'relative', width: '800px', height: '600px', border: '1px solid black' }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
     >
       {renderObjects()}
     </div>
