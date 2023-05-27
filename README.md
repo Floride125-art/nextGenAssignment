@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# NextGen Assignment
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This assignment is all about implementing Drag-and-Drop functionality with Object Resizing in React using HTML Canvas.
 
 ## Available Scripts
 
